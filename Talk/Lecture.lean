@@ -64,7 +64,8 @@ instance : Decidable (p.LegalMove start stop) :=
           | .rookHorizontal _ hy' => hy hy'
           | .rookVertical _ hx' => hx hx'
     | .king =>
-      if h : start.x.val.dist stop.x.val ≤ 1 ∧ start.y.val.dist stop.y.val ≤ 1 then
+      if h : start.x.val.dist stop.x.val ≤ 1 ∧
+             start.y.val.dist stop.y.val ≤ 1 then
         isTrue <| .king heq h.left h.right
       else
         isFalse <| fun | .king _ hx hy => by simp_all
@@ -107,12 +108,16 @@ def Empty (b : Board n) (pos : Pos n) : Prop :=
 instance {b : Board n} : Decidable (b.At pos p) :=
   inferInstanceAs <| Decidable (b pos = some p)
 
+end Board
+
 structure Move (n) where
   piece : PPiece
   start : Pos n
   stop  : Pos n
 
-structure Move.Legal (m : Move n) (b : Board n) : Prop where
+namespace Move
+
+structure Legal (m : Move n) (b : Board n) : Prop where
   hstart : b.At m.start m.piece
   hmove : m.piece.LegalMove m.start m.stop
   hstop : ∀ p, b.At m.stop p → p.color ≠ m.piece.color
@@ -128,11 +133,11 @@ instance {m : Move n} : Decidable (m.Legal b) :=
           isFalse fun contra => contra.hstop p' hp' hcolor
         else
           have hstop : ∀ p', b.At m.stop p' → p'.color ≠ m.piece.color :=
-            fun _ _ => by simp_all [At]
+            fun _ _ => by simp_all [Board.At]
           isTrue { hstart := hstart, hmove := hmove, hstop := hstop }
       | none =>
         have hstop : ∀ p', b.At m.stop p' → p'.color ≠ m.piece.color :=
-          fun _ _ => by simp_all [At]
+          fun _ _ => by simp_all [Board.At]
         isTrue { hstart, hmove, hstop }
     else
       isFalse fun contra => hmove contra.hmove
@@ -155,14 +160,14 @@ example {m : Move n} : Decidable (m.Legal b) := by
           · exact hstart
           · exact hmove
           · intros p' hp'
-            simp_all [At]
+            simp_all [Board.At]
       | none =>
         apply isTrue
         constructor
         · exact hstart
         · exact hmove
         · intros p' hp'
-          simp_all [At]
+          simp_all [Board.At]
     · apply isFalse
       intro contra
       apply hmove
@@ -172,7 +177,7 @@ example {m : Move n} : Decidable (m.Legal b) := by
     apply hstart
     exact contra.hstart
 
-attribute [aesop norm unfold] At
+attribute [aesop norm unfold] Board.At
 attribute [aesop 50% constructors] Decidable
 attribute [aesop safe [cases, constructors]] Move.Legal
 
@@ -185,43 +190,7 @@ example {m : Move n} : Decidable (m.Legal b) := by
     · aesop
   · aesop
 
-def move? (b : Board n) (start stop : Pos n) : Option (Board n) :=
-  if let some p := b start then
-    let m : Move n := { start, stop, piece := p }
-    if m.Legal b then
-      some <| b.set start none |>.set stop p
-    else
-      none
-  else
-    none
+def apply (m : Move n) (b : Board n) : Board n :=
+  b.set m.start none |>.set m.stop m.piece
 
-theorem move?_legal {m : Move n} :
-    m.Legal b →
-    ∃ b', move? b m.start m.stop = some b' ∧
-    b'.Empty m.start ∧
-    b'.At m.stop m.piece ∧
-    (∀ pos, pos ≠ m.stop → pos ≠ m.start → b pos = b' pos) := by
-  intro lm
-  cases' m with piece start stop
-  simp only [move?]
-  cases h : b start with
-  | some p =>
-    simp only
-    let h₂ := lm.hstart
-    unfold At at h₂
-    rw [h₂] at h
-    cases h
-    simp only [lm, ite_true, Option.some.injEq, ne_eq, exists_eq_left']
-    constructor
-    · rw [Empty, set_different lm.hmove.start_ne_stop, set_same]
-    · constructor
-      · unfold At
-        exact set_same
-      · intros pos' pos'_ne_stop pos'_ne_start
-        rw [set_different pos'_ne_stop, set_different pos'_ne_start]
-  | none =>
-    let h := lm.hstart
-    simp only [At] at h
-    simp_all
-
-end Board
+end Move
