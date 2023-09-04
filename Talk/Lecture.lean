@@ -20,7 +20,7 @@ inductive Piece
 structure Pos (n : Nat) where
   x : Fin n
   y : Fin n
-  deriving DecidableEq, Fintype
+  deriving DecidableEq
 
 #check Pos.x
 
@@ -77,21 +77,11 @@ structure PPiece where
   piece : Piece
   deriving DecidableEq
 
-namespace PPiece
-
-def rook (color : Color) : PPiece :=
-  { color, piece := .rook }
-
-def king (color : Color) : PPiece :=
-  { color, piece := .king }
-
-def LegalMove (p : PPiece) (start stop : Pos n) : Prop :=
+def PPiece.LegalMove (p : PPiece) (start stop : Pos n) : Prop :=
   p.piece.LegalMove start stop
 
 instance {p : PPiece} : Decidable (p.LegalMove start stop) :=
   inferInstanceAs <| Decidable (p.piece.LegalMove start stop)
-
-end PPiece
 
 def Board n := Pos n → (Option PPiece)
 
@@ -115,11 +105,8 @@ def At (b : Board n) (pos : Pos n) (p : PPiece) : Prop :=
 def Empty (b : Board n) (pos : Pos n) : Prop :=
   b pos = none
 
-instance {b : Board n} : Decidable (b.At pos p) := by
-  unfold At; exact inferInstance
-
-instance {b : Board n} : Decidable (b.Empty pos) := by
-  unfold Empty; exact inferInstance
+instance {b : Board n} : Decidable (b.At pos p) :=
+  inferInstanceAs <| Decidable (b pos = some p)
 
 end Board
 
@@ -207,53 +194,3 @@ def apply (m : Move n) (b : Board n) : Board n :=
   b.set m.start none |>.set m.stop m.piece
 
 end Move
-
-namespace Board
-
-instance [Fintype α] [DecidablePred P] : Fintype { x : α // P x } where
-  elems := Finset.univ.subtype P
-  complete := by simp
-
-def PiecePositions (b : Board n) (p : PPiece) : Type :=
-  { pos : Pos n // b.At pos p }
-
-instance : Fintype (PiecePositions b p) :=
-  by unfold PiecePositions; exact inferInstance
-
-def pieceCount (b : Board n) (p : PPiece) : Nat :=
-  Fintype.card (PiecePositions b p)
-
-theorem pieceCount_set_none :
-    pieceCount (b.set pos none) p =
-      if b.At pos p then
-        pieceCount b p - 1
-      else
-        pieceCount b p := by
-  simp only [pieceCount, set]
-
-structure Legal (b : Board n) where
-  rookCount : ∀ (c : Color), b.pieceCount (.rook c) ≤ 2
-  kingCount : ∀ (c : Color), b.pieceCount (.rook c) ≤ 1
-
-end Board
-
-theorem Move.apply_pieceCount {b : Board n} {m : Move n} (p : PPiece) :
-    m.Legal b → (m.apply b).pieceCount p ≤ b.pieceCount p := by
-  intro legal
-  simp [apply, Board.set, Board.pieceCount, Fintype.card, Finset.univ]
-  by_cases h₁ : m.stop = pos'
-
-theorem Move.apply_legal {b : Board n} {m : Move n} :
-    b.Legal → m.Legal b → (m.apply b).Legal := by
-  intros b_legal m_legal
-  constructor
-  case rookCount =>
-    intros
-    transitivity
-    apply m.apply_pieceCount _ m_legal
-    apply b_legal.rookCount
-  case kingCount =>
-    intros
-    transitivity
-    apply m.apply_pieceCount _ m_legal
-    apply b_legal.kingCount
