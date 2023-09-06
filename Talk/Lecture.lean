@@ -1,28 +1,124 @@
+/- # Extended Example: MiniChess -/
+
+/-
+We'll formalize some properties of an implementation of a small subset of
+chess. In the process, we'll use many of the programming and some of the
+proving facilities of Lean.
+
+First of all, we import `Mathlib`. This gives us access to everything defined
+in mathlib. In real formalisations, you'd usually only import specific files,
+e.g. `Mathlib.Data.Nat.Basic` to get basic definitions and theorems about
+natural numbers. Imports in Lean are transitive, so when you import
+`Mathlib.Data.Nat.Basic`, you also implicitly import all the files that
+`Mathlib.Data.Nat.Basic` imports, and the files that these files import, etc.
+-/
+
 import Mathlib
+import Mathlib.Data.Nat.Basic
 
-namespace Talk
+/-
+We put our entire development into the `MiniChess` namespace. This means that
+when we define a value `x`, its name is actually `MiniChess.x`. Namespaces serve
+to distinguish functions which would naturally have the same name. For example,
+we can have functions `Nat.add` (addition on natural numbers) and `Int.add`
+(addition on integers).
+-/
 
-/-! # Functional Programming -/
+namespace MiniChess
+
+/-
+To start the formalisation proper, we define a type representing the player
+colors of chess.
+-/
 
 inductive Color
-  | white
-  | black
+  | white : Color
+  | black : Color
   deriving DecidableEq
+
+/-
+As in Coq, inductive types have 0 or more constructors, which are
+distinguished functions whose return type is the type being defined (here
+`Color`). In simple cases, we need not write the return type, so we could
+remove `: Color` in the constructor types.
+
+The clause `deriving DecidableEq` instructs Lean to generate a function which
+decides whether two values `x, y : Color` are equal. We'll have more to say
+about this later.
+
+To inspect objects we've defined, we can use commands such as `#check` and
+`#print`. The `#check` command shows the type of a term. The `#print` command
+shows the definition of an object (inductive type, definition, ...).
+
+Commands which are purely informative (i.e., they don't change the state of the
+Lean system) are prefixed with `#`.
+-/
 
 #check Color
 #print Color
+
+/-
+We can also check that the `white` constructor of `Color` is really a function
+that returns `Color`. (Here, the function has no arguments, so it's a constant.)
+Note that, unlike in Coq, the `white` constructor is placed in the `Color`
+namespace.
+-/
+
+#check Color.white
+
+/-
+We'll also need a type of chess pieces. We'll consider only rooks and kings.
+-/
 
 inductive Piece
   | rook
   | king
   deriving DecidableEq
 
+/-
+Each piece in play is located at a specific position on the chess board. For
+a board of size n × n, we define the type of positions `Pos n`. A `Pos n` is
+a pair of an x-coordinate and a y-coordinate, both of type `Fin n`, which is the
+type of natural numbers 0, ..., n - 1 (so `Fin n` has exactly `n` elements).
+
+To support boards of any size, we parameterise the type `Pos` by the size
+`n : Nat` of the board. Thus, `Pos` has type `ℕ → Type`; it is a function, or
+family, of types.
+-/
+
 structure Pos (n : Nat) where
   x : Fin n
   y : Fin n
   deriving DecidableEq
 
+/-
+Positions are defined as a structure. Structures are specific inductive types
+which represent tuples of finitely many elements. The elements are called fields
+of the structure and can all have different types.
+
+The inductive type corresponding to a structure has one constructor, called `mk`
+by default, which takes one argument for each field. If we `#print Pos`, we can
+see the inductive type generated for the `Pos` structure.
+-/
+
+#print Pos
+
+/-
+In addition to the type itself, the `structure` command also generates
+projections `Pos.x` and `Pos.y`, which extract the fields from a `Pos` value:
+-/
+
 #check Pos.x
+#check Pos.y
+
+/-
+We now define the legal moves of our chess pieces as a relation
+`LegalMove ⊆ Pos n × Pos n × Piece`, where an element
+`(start, stop, p) ∈ LegalMove` signifies that the piece `p` can move from
+position `start` to position `stop`. We encode this relation as an inductive
+predicate -- an inductive type with arguments `start`, `stop` and `p` and
+codomain `Prop`.
+-/
 
 inductive Piece.LegalMove (start stop : Pos n) : Piece → Prop
   | rookHorizontal :
@@ -39,12 +135,136 @@ inductive Piece.LegalMove (start stop : Pos n) : Piece → Prop
     start.y.val.dist stop.y.val ≤ 1 →
     LegalMove start stop king
 
+/-
+There's a lot going on here, so we'll go through this declaration slowly.
+
+First, a detail: we write `Piece.LegalMove`, putting the `LegalMove` type into
+the `Piece` namespace. Within the declaration, Lean automatically opens the
+`Piece` namespace, so we can write just `LegalMove` instead of
+`Piece.LegalMove`.
+
+Next, the codomain of `LegalMove`, `Prop`, is a universe of types, so terms `P :
+Prop` can be used as types of other terms. For example, `∀ (p : P), ...` is
+legal. We call `P` a proposition and `p : P` its proof. Other universes are
+called `Type` (aka `Type 0`), `Type 1`, `Type 2`, etc. If we don't specify the
+type of an inductive type, as with `Color` and `Piece`, Lean infers a sensible
+choice, here `Type`.
+
+As in Coq, the universes are arranged in a hierarchy:
+`Prop : Type 0`, `Type 0 : Type 1`, `Type 1 : Type 2`, etc.
+-/
+
+#check Prop
+#check Type
+#check Type 0
+#check Type 1
+
+/-
+Lean's `Prop` has slightly different properties than Coq's, which we'll come
+back to.
+
+Next, observe the arguments of `LegalMove`. The first two, `start` and `stop`,
+appear before the colon and are therefore parameters. The last, of type `Piece`,
+is an index. The difference is that parameters are fixed throughout the
+declaration: wherever `LegalMove` appears in the declaration, it must be applied
+precisely to `start` and `stop`. Indices, on the other hand, can be given
+arbitrary values in the constructor types.
+
+A detail before we get to the constructors: in the type `Pos n` of `start` and
+`stop`, what is `n`? It is not bound anywhere, so Lean automatically figures out
+that `n` must have type `Nat` and generates an implicit argument `{n : ℕ}`,
+inserted at the start of the type signature of `LegalMove`. We can `#check` the
+type of `LegalMove` to confirm this:
+-/
+
+#check Piece.LegalMove
+
+/-
+These arguments are called auto-implicit. They are great for decluttering type
+signatures since we can omit 'obvious' type annotations. However, auto-implicit
+arguments can also make it harder to spot mistakes in declarations. Consider
+this version of `LegalMove` with a typo:
+-/
+
+inductive Bad.LegalMove (start stop : Pos n) : Peice → Prop
+-- ...
+
+/-
+If you add the same constructors as above, Lean accepts the declaration, but the
+relation it defines is not at all the one we wanted. Other times you might get
+confusing error messages if Lean gets confused by a wrongly inserted
+auto-implicit argument. So look for suspicious colouring (auto-implicit
+arguments are coloured as variables rather than defined constants). If you
+prefer, you can also disable auto-implicit arguments:
+-/
+
+set_option autoImplicit false
+
+/-
+However, I like auto-implicits, so I'll reactive them.
+-/
+
+set_option autoImplicit true
+
+/-
+Let's finally consider the constructors of `LegalMove`. We have three types
+of legal moves, corresponding to the three constructors. The rook can move
+in a horizontal or vertical line. The king can move to any adjacent square. The
+inductive type's constructors formalize these restrictions:
+
+- The `rookHorizontal` constructor says that `(start, stop, rook)` are related
+  by `LegalMove` if the y-coordinates of `start` and `stop` are equal. The
+  x-coordinates of `x` and `y` can be arbitrary, with the exception that
+  `start` and `stop` cannot be the same position.
+- The `rookVertical` constructor says that, similarly, `(start, stop, rook)` are
+  related if the x-coordinates of `start` and `stop` are equal (and `start ≠
+  stop`).
+- The `king` constructor says that `(start, stop, king)` are related if the
+  distance between the x-coordinates of `start` and `stop` is less than or equal
+  to 1, and similar for the y-coordinate, and `start ≠ stop`.
+- Any proof of the proposition `(start, stop, piece) ∈ LegalMove` is an
+  application of one of the three constructors. This is a general property of
+  inductive types. In other words, horizontal/vertical rook moves and one-square
+  king moves are the only legal moves.
+
+In the constructor types, we pervasively use dot notation, a syntactic feature
+that allows us to write, for example, `start.x` instead of `Pos.x start`. The
+general rule is that if you write `t.f` and the term `t` has type `T`, and the
+function `T.f` exists and has an argument of type `T`, then the dot notation
+`t.f` expands into an application of `T.f` to `t`. If `T.f` has multiple
+arguments of type `T`, then `t` is used as the value for the first of these. `T`
+can also be an application of a type family, e.g. `T = List α`, in which case we
+look for `List.f`. And finally, dot notation can be chained, so
+`start.x.val.dist` is short for `Nat.dist (Fin.val (Pos.x start))`.
+
+Two more details about the constructor types:
+
+- The index of type `Piece` of `LegalMove` is given different values in the
+  constructors: it is `rook` in the first two constructors and `king` in the
+  third. This is the power of indices as opposed to parameters.
+- We can write `rook` and `king`, rather than `Piece.rook` and `Piece.king`,
+  because the `Piece` namespace is open in the declaration.
+
+Now, let us prove some basic facts about legal moves. We put these facts into a
+section named `LegalMove`. Certain commands are scoped to the current section,
+meaning they become inactive once the current section ends. Other than that,
+sections have no effect. The similar `namespace` command, which we saw earlier,
+also acts as a section, but additionally modifies the names of declarations in
+the `namespace` section.
+-/
+
 section LegalMove
+
+/-
+We first use a `variable` command to declare that in the following, wherever
+`p` appears (and is not otherwise bound), it should be added to the type
+signature of the respective declaration as an implicit argument of type `Piece`.
+Variable commands are scoped to the current section.
+-/
 
 variable {p : Piece}
 
-theorem Piece.LegalMove.start_ne_stop :
-    p.LegalMove start stop → start ≠ stop
+theorem Piece.LegalMove.start_ne_stop : LegalMove start stop p → start ≠ stop
   | rookHorizontal h .. => h
   | rookVertical   h .. => h
   | king           h .. => h
@@ -62,7 +282,7 @@ instance : Decidable (p.LegalMove start stop) :=
       else
         isFalse fun
           | .rookHorizontal _ hy' => hy hy'
-          | .rookVertical _ hx' => hx hx'
+          | .rookVertical   _ hx' => hx hx'
     | .king =>
       if h : start.x.val.dist stop.x.val ≤ 1 ∧
              start.y.val.dist stop.y.val ≤ 1 then
