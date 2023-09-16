@@ -6,7 +6,7 @@ Assistants and Mathematics in Regensburg
 ## Installing Lean 4
 
 To install Lean 4, follow the instructions
-[https://leanprover-community.github.io/get_started.html](here). After you've
+[here](https://leanprover-community.github.io/get_started.html). After you've
 done so, you should have the following software available:
 
 - `git` (the version control system)
