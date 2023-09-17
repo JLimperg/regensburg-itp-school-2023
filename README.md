@@ -51,6 +51,75 @@ also work for any other Lean package):
   during the lecture. Lean should automatically start and blue or green squiggly
   lines should appear at various places in the file.
 
+See also [these
+instructions](https://leanprover-community.github.io/install/project.html#working-on-an-existing-project).
+
 ## Exercises
 
-To be announced (hopefully by the start of the school).
+The Lean community has developed several learning resources, differing in target
+audience and pace. During the exercise class, I suggest you work on whichever of
+these resources best matches your learning objectives. Yet more resources are
+available [here](https://leanprover-community.github.io/learn.html).
+
+### Mathematically Oriented
+
+#### Natural Number Game
+
+https://adam.math.hhu.de/#/g/hhu-adam/NNG4
+
+A very gentle introduction focusing on basic tactics and induction over
+natural numbers. Runs in a browser, no installation required.
+
+#### A Glimpse of Lean
+
+https://github.com/PatrickMassot/GlimpseOfLean
+
+A mathematically oriented tutorial of 2-3h. Can be run locally or in a browser.
+To run it locally, clone the above Git repository and follow [the same steps as
+for my lecture project](#following-along-with-the-lectures).
+
+#### Mathematics in Lean
+
+https://leanprover-community.github.io/mathematics_in_lean/
+
+The de facto standard interactive textbook about doing mathematics in Lean. Can
+be run locally or in a browser. To run it locally, clone [this Git
+repository](https://github.com/leanprover-community/mathematics_in_lean) and
+follow [the same steps as for my lecture
+project](#following-along-with-the-lectures). Many warnings are expected at the
+`lake build` step.
+
+#### The Mechanics of Proof
+
+https://hrmacbeth.github.io/math2001/
+
+Lecture notes for an early undergraduate mathematics course. Shorter and gentler
+than Mathematics in Lean. Can be run locally or in a browser. To run it locally,
+clone [this Git repository](https://github.com/hrmacbeth/math2001) and follow
+[the same steps as for my lecture project](#following-along-with-the-lectures).
+
+### Computer Science Oriented
+
+#### Functional Programming in Lean
+
+https://leanprover.github.io/functional_programming_in_lean/
+
+A textbook about functional programming in Lean. The code examples can be found
+[here](https://github.com/leanprover/fp-lean).
+
+#### Logical Verification (2023 edition)
+
+https://github.com/blanchette/logical_verification_2023
+
+Lecture notes and code for an MSc-level computer science course using Lean, with
+a focus on proofs about programming languages. To run the code, clone the above
+Git repository and follow [the same steps as for my lecture
+project](#following-along-with-the-lectures). Many warnings (and even errors in
+some exercise sheets) are expected at the `lake build` step.
+
+#### Theorem Proving in Lean 4
+
+https://leanprover.github.io/theorem_proving_in_lean4/
+
+The official Lean 4 textbook. Discusses the Lean system in a systematic fashion
+without focusing on any particular application.
