@@ -30,25 +30,21 @@ also work for any other Lean package):
   ```text
   cd regensburg-itp-school-2023
   ```
-- Download the dependencies of this project:
-  ```text
-  lake update
-  ```
-  This will download the dependencies of my code, notably a specific version of
-  Lean 4 and a specific version of mathlib, the Lean mathematical library.
-- Download cached mathlib files:
+- Download dependencies, including cached binary files:
   ```text
   lake exe cache get
   ```
-  This will download compiled files for this mathlib version from the mathlib
-  cache server. You can also skip this step, but then the next step will take
-  a very long time.
+  This will download the appropriate version of Lean, the appropriate version
+  of this project's dependencies, and compiled files for the dependencies.
+  You can also skip this step, but then the next step will take a very long
+  time.
 - Build the project:
   ```text
   lake build
   ```
-  This will compile the project's dependencies and the project itself. Some
-  warnings are expected.
+  This will compile the project (and its dependencies, but if you've executed
+  the previous step, you already have compiled files for the dependencies).
+  Some warnings are expected.
 - Start VSCode and open the *folder* `regensburg-itp-school-2023` (*not* a
   specific file in that folder).
 - Select the file `Talk/Lecture.lean`. This is the code I'll be discussing
