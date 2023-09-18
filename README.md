@@ -136,6 +136,7 @@ without focusing on any particular application.
   high-level description of the mathematics that's currently in mathlib.
 - [mathlib 4 docs](https://leanprover-community.github.io/mathlib4_docs/): API
   documentation for mathlib as well as Lean 4 and the standard library.
+- [Loogle](https://loogle.lean-fro.org/): search engine for Lean theorems.
 - [Lean 4 manual](https://leanprover.github.io/lean4/doc/): official Lean 4
   reference manual.
 - [Metaprogramming
