@@ -1,20 +1,472 @@
+import Mathlib
+import Mathlib.Data.Nat.Basic
+
+/- # Basic Tactics -/
+
+/- ## Logic -/
+
+/- ### True -/
+
+example : True := by
+  apply True.intro
+
+/- ### False -/
+
+example : False → α := by
+  intro contra
+  cases contra
+
+example : False → α :=
+  False.elim
+
+/- ### Implication, Forall -/
+
+example : (A → B) → A → B := by
+  intros hab ha
+  apply hab
+  exact ha
+
+example : ∀ (hab : ∀ (a : A), B) (ha : A), B := by
+  intros hab ha
+  apply hab
+  exact ha
+
+example : (A → B → C) → A → B → C := by
+  intros habc a b
+  refine habc ?_ b
+  exact a
+
+example : (A → B → C) → A → B → C := by
+  intros habc a b
+  refine' habc _ b
+  exact a
+
+/- ### And -/
+
+example : A ∧ B → B ∧ A := by
+  intro h
+  cases' h with a b
+  constructor
+  · exact b
+  · exact a
+
+example : A ∧ B → B ∧ A := by
+  intro h
+  match h with
+  | ⟨a, b⟩ => constructor <;> assumption
+
+example : A ∧ B → B ∧ A := by
+  intro h
+  cases h with
+  | intro a b => constructor <;> assumption
+
+example : A ∧ B → B ∧ A := by
+  intro h
+  have ⟨a, b⟩ := h
+  constructor <;> assumption
+
+example : A ∧ B → B ∧ A := by
+  intro ⟨a, b⟩
+  constructor <;> assumption
+
+example : (A ∧ B) ∧ C → A ∧ (B ∧ C) := by
+  intro ⟨x, c⟩
+  have ⟨a, b⟩ := x
+  (repeat' constructor) <;> assumption
+
+example : (A ∧ B) ∧ C → A ∧ (B ∧ C) := by
+  intro ⟨⟨a, b⟩, c⟩
+  (repeat' constructor) <;> assumption
+
+example : A ∧ B → B ∧ A := by
+  fail_if_success (simp; done)
+  intros; simp_all
+
+/- ### Or -/
+
+example : A ∨ B → B ∨ A := by
+  intro h
+  cases' h with a b
+  · right
+    exact a
+  · left
+    exact b
+
+example : A ∨ B → B ∨ A := by
+  intro h
+  match h with
+  | .inl a => right; assumption
+  | .inr b => left; assumption
+
+example : A ∨ B → B ∨ A := by
+  intro h
+  cases h with
+  | inl a => right; assumption
+  | inr b => left; assumption
+
+example : A ∨ B → B ∨ A := by
+  rintro (a | b)
+  · right; assumption
+  · left; assumption
+
+example : A ∨ B → B ∨ A := by
+  intro h
+  obtain (a | b) := h
+  · right; assumption
+  · left; assumption
+
+example : A ∨ B → B ∨ A := by
+  intro h
+  rcases h with (a | b)
+  · right; assumption
+  · left; assumption
+
+example : A ∨ B → B ∨ A := by
+  fail_if_success simp
+  aesop
+
+/- ## Exists, Sigma -/
+
+example {P Q : α → Prop} : (∃ x, P x) → (∀ x, P x → Q x) → ∃ x, Q x := by
+  intro ex hPQ
+  cases' ex with x hP
+  use x
+  aesop
+
+example {P Q : α → Prop} : (∃ x, P x) → (∀ x, P x → Q x) → ∃ x, Q x := by
+  intro ⟨x, hP⟩ hPQ
+  exists x
+  aesop
+
+example {P Q : α → Type} : (Σ x, P x) → (∀ x, P x → Q x) → Σ x, Q x := by
+  intro ⟨x, hP⟩ hPQ
+  exists x
+  aesop
+
+example {P Q : α → Type} : (Σ x, P x) → (∀ x, P x → Q x) → Σ x, Q x := by
+  aesop
+
+/- ## Equality -/
+
+example {n : ℕ} : n = n := by
+  rfl
+
+example : 21 * 2 = 42 := by
+  rfl
+
+example {m n o : ℕ} : m = n → n = o → m = o := by
+  intros mn no
+  rw [mn, no]
+
+example {m n o : ℕ} : m = n → n = o → m = o := by
+  intros mn no
+  simp_all
+
+example {f g : α → β} (h : ∀ a, f a = g a) : f = g := by
+  funext a
+  apply h
+
+example {f : α → β → γ} : f a b = f a' b' := by
+  congr
+  repeat sorry
+
+/- ### Calc Mode -/
+
+example {f g : α → β → γ} (fg : f = g) (ab : a = b) (bc : b = c) (xy : x = y) :
+    f a x = g c y :=
+  calc
+    f a x = f b x := by rw [ab]
+    _     = f c x := by rw [bc]
+    _     = f c y := by rw [xy]
+    _     = g c y := by rw [fg]
+
+/- ### Conv Mode -/
+
+example (a b c : ℕ) : a * (b * c) = a * (c * b) := by
+  conv =>
+    lhs
+    congr
+    rfl
+    rw [Nat.mul_comm]
+
+example (a b c : ℕ) : a * (b * c) = a * (c * b) := by
+  conv => lhs; right; rw [Nat.mul_comm]
+
+example (a b c : ℕ) : a * (b * c) = a * (c * b) := by
+  conv in b * _ => rw [Nat.mul_comm]
+
+-- Example from TPIL. More examples:
+-- https://leanprover.github.io/theorem_proving_in_lean4/conv.html
+
+/- ## Structured Proof -/
+
+-- Example from A Glimpse of Lean
+
+def SeqLimit (u : ℕ → ℝ) (l : ℝ) : Prop :=
+  ∀ ε > 0, ∃ N, ∀ n ≥ N, |u n - l| ≤ ε
+
+def ContAt (f : ℝ → ℝ) (x₀ : ℝ) : Prop :=
+  ∀ ε > 0, ∃ δ > 0, ∀ x, |x - x₀| ≤ δ → |f x - f x₀| ≤ ε
+
+example (f : ℝ → ℝ) (u : ℕ → ℝ) (x₀ : ℝ) (hu : SeqLimit u x₀)
+    (hf : ContAt f x₀) : SeqLimit (f ∘ u) (f x₀) := by
+  unfold SeqLimit
+  intro ε hε
+  have ⟨δ, δ_pos, Hf⟩ := hf ε hε
+  have ⟨N, Hu⟩ := hu δ δ_pos
+  use N
+  intro n hn
+  apply Hf
+  exact Hu n hn
+
+example (f : ℝ → ℝ) (u : ℕ → ℝ) (x₀ : ℝ) (hu : SeqLimit u x₀)
+    (hf : ContAt f x₀) : SeqLimit (f ∘ u) (f x₀) := by
+  show ∀ ε > 0, ∃ N, ∀ n ≥ N, |(f ∘ u) n - f x₀| ≤ ε
+  intro (ε : ℝ) (hε : ε > 0)
+  have ⟨δ, δ_pos, Hf⟩ : ∃ δ > 0, ∀ x, |x - x₀| ≤ δ → |f x - f x₀| ≤ ε :=
+    hf ε hε
+  have ⟨N, Hu⟩ : ∃ N, ∀ n ≥ N, |u n - x₀| ≤ δ :=
+    hu δ δ_pos
+  use N
+  show ∀ n ≥ N, |(f ∘ u) n - f x₀| ≤ ε
+  aesop
+
+/- ## Inductive Types and Induction -/
+
+inductive MyNat where
+  | zero : MyNat
+  | succ : MyNat → MyNat
+
+namespace MyNat
+
+def add : MyNat → MyNat → MyNat
+  | m, zero => m
+  | m, (succ n) => succ (add m n)
+
+instance : Add MyNat :=
+  ⟨add⟩
+
+protected def ofNat : Nat → MyNat
+  | .zero => zero
+  | .succ n => succ (MyNat.ofNat n)
+
+instance : OfNat MyNat n where
+  ofNat := .ofNat n
+
+@[simp]
+theorem succ_eq_add_one (m : MyNat) : succ m = m + 1 := rfl
+
+@[simp]
+theorem zero_eq_zero : (zero : MyNat) = 0 := rfl
+
+@[simp]
+theorem add_zero (m : MyNat) : m + 0 = m := rfl
+
+@[simp]
+theorem add_add_one (m n : MyNat) : m + (n + 1) = (m + n) + 1 := rfl
+
+theorem one_add_add (m n : MyNat) : (m + 1) + n = m + n + 1 := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    dsimp
+    congr 1
+
+@[simp]
+theorem zero_add (m : MyNat) : 0 + m = m := by
+  induction m with
+  | zero => dsimp
+  | succ m ih =>
+    dsimp
+    rw [ih]
+
+theorem add_assoc (m n o : MyNat) : m + (n + o) = m + n + o := by
+  induction o with
+  | zero => simp
+  | succ o ih => simp [ih]
+
+theorem add_comm (m n : MyNat) : m + n = n + m := by
+  induction n with
+  | zero =>
+    dsimp
+    rw [zero_add]
+  | succ n ih =>
+    dsimp
+    rw [one_add_add]
+    rw [ih]
+
+end MyNat
+
+/- # Structures (and Universes) -/
+
+structure Pair (α : Type u) (β : Type v) : Type (max u v) where
+  fst : α
+  snd : β
+
+#check Pair
+#check Pair.mk
+#check Pair.fst
+#check Pair.snd
+
+structure Sig (α : Type u) (β : α → Type v) : Type (max u v) where
+  intro ::
+  fst : α
+  snd : β fst
+
+#check Sig
+#check Sig.intro
+#check Sig.fst
+#check Sig.snd
+
+/- # Prop -/
+
+inductive Disj (α β : Prop) : Prop
+  | left  : α → Disj α β
+  | right : β → Disj α β
+
+example (a : α) (b : β) : Disj α β :=
+  Disj.left a
+
+example (a : α) (b : β) : Disj α β :=
+  Disj.right b
+
+example (a : α) (b : β) : Disj.left a = Disj.right b :=
+  rfl
+
+/- # Type Classes and the Algebraic Hierarchy -/
+
+namespace TC
+
+class Mul (α : Type u) where
+  mul : α → α → α
+
+local infixl : 70 (priority := high) "*" => Mul.mul
+
+example [Mul α] (x y : α) : α :=
+  x * y
+
+class One (α : Type u) where
+  one : α
+
+instance [One α] : OfNat α 1 where
+  ofNat := One.one
+
+def npowRec [One M] [Mul M] : ℕ → M → M
+  | 0, _ => 1
+  | n + 1, a => a * npowRec n a
+
+class MulOneClass (M : Type u) extends One M, Mul M where
+  one_mul : ∀ a : M, 1 * a = a
+  mul_one : ∀ a : M, a * 1 = a
+
+class Semigroup (G : Type u) extends Mul G where
+  mul_assoc : ∀ a b c : G, a * b * c = a * (b * c)
+
+class Monoid (M : Type u) extends Semigroup M, MulOneClass M where
+  npow : ℕ → M → M := npowRec
+  npow_zero : ∀ x, npow 0 x = 1 := by intros; rfl
+  npow_succ : ∀ (n : ℕ) (x), npow (n + 1) x = x * npow n x := by intros; rfl
+
+-- ...
+-- class Ring (R : Type u) extends Semiring R, AddCommGroup R, AddGroupWithOne R
+-- ...
+
+structure OneHom (M : Type*) (N : Type*) [One M] [One N] where
+  toFun : M → N
+  map_one' : toFun 1 = 1
+
+structure MulHom (M : Type*) (N : Type*) [Mul M] [Mul N] where
+  toFun : M → N
+  map_mul' : ∀ x y, toFun (x * y) = toFun x * toFun y
+
+infixr:25 " →ₙ* " => MulHom
+
+structure MonoidHom (M : Type*) (N : Type*) [MulOneClass M] [MulOneClass N] extends
+  OneHom M N, M →ₙ* N
+
+class FunLike (F : Sort*) (α : outParam (Sort*)) (β : outParam <| α → Sort*) where
+  coe : F → ∀ a : α, β a
+  coe_injective' : Function.Injective coe
+
+instance (priority := 100) [FunLike F α β] : CoeFun F fun _ ↦ ∀ a : α, β a where
+  coe := FunLike.coe
+
+class OneHomClass (F : Type*) (M N : outParam (Type*)) [One M] [One N]
+    extends FunLike F M fun _ => N where
+  map_one : ∀ f : F, f 1 = 1
+
+class MulHomClass (F : Type*) (M N : outParam (Type*)) [Mul M] [Mul N]
+    extends FunLike F M fun _ => N where
+  map_mul : ∀ (f : F) (x y : M), f (x * y) = f x * f y
+
+class MonoidHomClass (F : Type*) (M N : outParam (Type*)) [MulOneClass M] [MulOneClass N]
+  extends MulHomClass F M N, OneHomClass F M N
+
+end TC
+
+/-# More Help -/
+
+/- ## Available commands/tactics/... -/
+
+#help option
+#help tactic
+#help conv
+
+/- ## Computation -/
+
+#eval 1 + 1 -- 2
+#reduce 1 + 1 -- 2
+-- #eval fun x => x + 1 -- fails
+#reduce fun x => x + 1 -- fun x => Nat.succ x
+
+/- ## Typeclasses -/
+
+#synth ∀ {n : ℕ},  Decidable (Even n)
+-- #synth ∀ {n : ℝ}, Decidable (Even n) -- fails
+#instances Decidable
+
+/- ## library_search -/
+
+-- Commented because these commands take a long time to execute and drain my
+-- laptop battery in the process.
+
+-- example {m n : ℕ} : m + n = n + m := by
+--   exact?
+
+-- example {m n : ℕ} : n.succ = m.succ → n = m := by
+--   exact?
+
+-- example {m n : ℕ} : n.succ.succ = m.succ.succ → n = m := by
+--   intros
+--   fail_if_success exact?
+--   apply?
+
+/- ## What does my automation do? -/
+
+example {m n : ℕ} : n.succ.succ = m.succ.succ → n = m := by
+  simp?
+
+example {m n : ℕ} : n.succ.succ = m.succ.succ → n = m := by
+  set_option trace.Meta.Tactic.simp.rewrite true in
+  simp?
+
+example {P Q R : Prop} : P ∨ Q → (P → R) → (Q → R) → R := by
+  aesop?
+
+example {P Q R : Prop} : P ∨ Q → (P → R) → (Q → Q) → R := by
+  set_option trace.aesop true in
+  aesop
+  sorry
+
+/- # Differences between Coq and Lean -/
+
 /- # Extended Example: MiniChess -/
 
 /-
 We'll formalize some properties of an implementation of a small subset of
 chess. In the process, we'll use many of the programming and some of the
 proving facilities of Lean.
-
-First of all, we import `Mathlib`. This gives us access to everything defined
-in mathlib. In real formalisations, you'd usually only import specific files,
-e.g. `Mathlib.Data.Nat.Basic` to get basic definitions and theorems about
-natural numbers. Imports in Lean are transitive, so when you import
-`Mathlib.Data.Nat.Basic`, you also implicitly import all the files that
-`Mathlib.Data.Nat.Basic` imports, and the files that these files import, etc.
 -/
-
-import Mathlib
-import Mathlib.Data.Nat.Basic
 
 /-
 We put our entire development into the `MiniChess` namespace. This means that
@@ -31,7 +483,7 @@ To start the formalisation proper, we define a type representing the player
 colors of chess.
 -/
 
-inductive Color
+inductive Color : Type
   | white : Color
   | black : Color
   deriving DecidableEq
@@ -269,6 +721,13 @@ theorem Piece.LegalMove.start_ne_stop : LegalMove start stop p → start ≠ sto
   | rookVertical   h .. => h
   | king           h .. => h
 
+theorem foo : p.LegalMove start stop → start ≠ stop := by
+  intro legal
+  cases legal with
+  | rookHorizontal h _ => exact h
+  | rookVertical h _ => exact h
+  | king h _ _ => exact h
+
 instance : Decidable (p.LegalMove start stop) :=
   if heq : start = stop then
     isFalse fun contra => contra.start_ne_stop heq
@@ -414,355 +873,6 @@ def apply (m : Move n) (b : Board n) : Board n :=
   b.set m.start none |>.set m.stop m.piece
 
 end MiniChess.Move
-
-/- # More Basic Tactics -/
-
-/- ## Logic -/
-
-/- ### True -/
-
--- TODO
-
-/- ### False -/
-
--- TODO
-
-/- ### Implication, Forall -/
-
-example : (A → B) → A → B := by
-  intros hab ha
-  apply hab
-  exact ha
-
-example : ∀ (hab : A → B) (ha : A), B := by
-  intros hab ha
-  apply hab
-  exact ha
-
-/- ### And -/
-
-example : A ∧ B → B ∧ A := by
-  intro h
-  cases' h with a b
-  constructor
-  · exact b
-  · exact a
-
-example : A ∧ B → B ∧ A := by
-  intro h
-  match h with
-  | ⟨a, b⟩ => constructor <;> assumption
-
-example : A ∧ B → B ∧ A := by
-  intro h
-  cases h with
-  | intro a b => constructor <;> assumption
-
-example : A ∧ B → B ∧ A := by
-  intro h
-  have ⟨a, b⟩ := h
-  constructor <;> assumption
-
-example : A ∧ B → B ∧ A := by
-  intro ⟨a, b⟩
-  constructor <;> assumption
-
-example : (A ∧ B) ∧ C → A ∧ (B ∧ C) := by
-  intro ⟨x, c⟩
-  have ⟨a, b⟩ := x
-  (repeat' constructor) <;> assumption
-
-example : (A ∧ B) ∧ C → A ∧ (B ∧ C) := by
-  intro ⟨⟨a, b⟩, c⟩
-  (repeat' constructor) <;> assumption
-
-example : A ∧ B → B ∧ A := by
-  fail_if_success (simp; done)
-  intros; simp_all
-
-/- ### Or -/
-
-example : A ∨ B → B ∨ A := by
-  intro h
-  cases' h with a b
-  · right
-    exact a
-  · left
-    exact b
-
-example : A ∨ B → B ∨ A := by
-  intro h
-  match h with
-  | .inl a => right; assumption
-  | .inr b => left; assumption
-
-example : A ∨ B → B ∨ A := by
-  intro h
-  cases h with
-  | inl a => right; assumption
-  | inr b => left; assumption
-
-example : A ∨ B → B ∨ A := by
-  rintro (a | b)
-  · right; assumption
-  · left; assumption
-
-example : A ∨ B → B ∨ A := by
-  intro h
-  obtain (a | b) := h
-  · right; assumption
-  · left; assumption
-
-example : A ∨ B → B ∨ A := by
-  intro h
-  rcases h with (a | b)
-  · right; assumption
-  · left; assumption
-
-example : A ∨ B → B ∨ A := by
-  fail_if_success simp
-  aesop
-
-/- ## Exists, Sigma -/
-
-example {P Q : α → Prop} : (∃ x, P x) → (∀ x, P x → Q x) → ∃ x, Q x := by
-  intro ex hPQ
-  cases' ex with x hP
-  use x
-  aesop
-
-example {P Q : α → Prop} : (∃ x, P x) → (∀ x, P x → Q x) → ∃ x, Q x := by
-  intro ⟨x, hP⟩ hPQ
-  exists x
-  aesop
-
-example {P Q : α → Type} : (Σ x, P x) → (∀ x, P x → Q x) → Σ x, Q x := by
-  intro ⟨x, hP⟩ hPQ
-  exists x
-  aesop
-
-example {P Q : α → Type} : (Σ x, P x) → (∀ x, P x → Q x) → Σ x, Q x := by
-  aesop
-
-/- ## Equality -/
-
-example {n : ℕ} : n = n := by
-  rfl
-
-example {m n o : ℕ} : m = n → n = o → m = o := by
-  intros mn no
-  rw [mn, no]
-
-example {m n o : ℕ} : m = n → n = o → m = o := by
-  intros mn no
-  simp_all
-
-example (f g : α → β) (h : ∀ a, f a = g a) : f = g := by
-  funext a
-  apply h
-
-example {f : α → β → γ} : f a b = f a' b' := by
-  congr
-  repeat sorry
-
--- TODO calc
--- TODO conv
-
-/- ## Structured Proof -/
-
-/- ## Induction -/
-
-inductive MyNat where
-  | zero : MyNat
-  | succ : MyNat → MyNat
-
-namespace MyNat
-
-def add : MyNat → MyNat → MyNat
-  | m, zero => m
-  | m, (succ n) => succ (add m n)
-
-instance : Add MyNat :=
-  ⟨add⟩
-
-protected def ofNat : Nat → MyNat
-  | .zero => zero
-  | .succ n => succ (MyNat.ofNat n)
-
-instance : OfNat MyNat n where
-  ofNat := .ofNat n
-
-@[simp]
-theorem succ_eq_add_one (m : MyNat) : succ m = m + 1 := rfl
-
-@[simp]
-theorem zero_eq_zero : (zero : MyNat) = 0 := rfl
-
-@[simp]
-theorem add_zero (m : MyNat) : m + 0 = m := rfl
-
-@[simp]
-theorem add_add_one (m n : MyNat) : m + (n + 1) = (m + n) + 1 := rfl
-
-theorem one_add_add (m n : MyNat) : (m + 1) + n = m + n + 1 := by
-  induction n with
-  | zero => rfl
-  | succ n ih =>
-    dsimp
-    congr 1
-
-@[simp]
-theorem zero_add (m : MyNat) : 0 + m = m := by
-  induction m with
-  | zero => dsimp
-  | succ m ih =>
-    dsimp
-    rw [ih]
-
-theorem add_assoc (m n o : MyNat) : m + (n + o) = m + n + o := by
-  induction o with
-  | zero => simp
-  | succ o ih => simp [ih]
-
-theorem add_comm (m n : MyNat) : m + n = n + m := by
-  induction n with
-  | zero =>
-    dsimp
-    rw [zero_add]
-  | succ n ih =>
-    dsimp
-    rw [one_add_add]
-    rw [ih]
-
-end MyNat
-
-/- # Typeclasses and the Algebraic Hierarchy -/
-
-namespace TC
-
-class Mul (α : Type u) where
-  mul : α → α → α
-
-local infixl : 70 (priority := high) "*" => Mul.mul
-
-example [Mul α] (x y : α) : α :=
-  x * y
-
-class One (α : Type u) where
-  one : α
-
-instance [One α] : OfNat α 1 where
-  ofNat := One.one
-
-def npowRec [One M] [Mul M] : ℕ → M → M
-  | 0, _ => 1
-  | n + 1, a => a * npowRec n a
-
-class MulOneClass (M : Type u) extends One M, Mul M where
-  one_mul : ∀ a : M, 1 * a = a
-  mul_one : ∀ a : M, a * 1 = a
-
-class Semigroup (G : Type u) extends Mul G where
-  mul_assoc : ∀ a b c : G, a * b * c = a * (b * c)
-
-class Monoid (M : Type u) extends Semigroup M, MulOneClass M where
-  npow : ℕ → M → M := npowRec
-  npow_zero : ∀ x, npow 0 x = 1 := by intros; rfl
-  npow_succ : ∀ (n : ℕ) (x), npow (n + 1) x = x * npow n x := by intros; rfl
-
--- ...
--- class Ring (R : Type u) extends Semiring R, AddCommGroup R, AddGroupWithOne R
--- ...
-
-structure OneHom (M : Type*) (N : Type*) [One M] [One N] where
-  toFun : M → N
-  map_one' : toFun 1 = 1
-
-structure MulHom (M : Type*) (N : Type*) [Mul M] [Mul N] where
-  toFun : M → N
-  map_mul' : ∀ x y, toFun (x * y) = toFun x * toFun y
-
-infixr:25 " →ₙ* " => MulHom
-
-structure MonoidHom (M : Type*) (N : Type*) [MulOneClass M] [MulOneClass N] extends
-  OneHom M N, M →ₙ* N
-
-class FunLike (F : Sort*) (α : outParam (Sort*)) (β : outParam <| α → Sort*) where
-  coe : F → ∀ a : α, β a
-  coe_injective' : Function.Injective coe
-
-instance (priority := 100) [FunLike F α β] : CoeFun F fun _ ↦ ∀ a : α, β a where
-  coe := FunLike.coe
-
-class OneHomClass (F : Type*) (M N : outParam (Type*)) [One M] [One N]
-    extends FunLike F M fun _ => N where
-  map_one : ∀ f : F, f 1 = 1
-
-class MulHomClass (F : Type*) (M N : outParam (Type*)) [Mul M] [Mul N]
-    extends FunLike F M fun _ => N where
-  map_mul : ∀ (f : F) (x y : M), f (x * y) = f x * f y
-
-class MonoidHomClass (F : Type*) (M N : outParam (Type*)) [MulOneClass M] [MulOneClass N]
-  extends MulHomClass F M N, OneHomClass F M N
-
--- TODO diamonds
-
-end TC
-
-/- # Automation Tactics -/
-
-/-# More Help -/
-
-/- ## Available commands/tactics/... -/
-
-#help option
-#help tactic
-#help conv
-
-/- ## Computation -/
-
-#eval 1 + 1 -- 2
-#reduce 1 + 1 -- 2
--- #eval fun x => x + 1 -- fails
-#reduce fun x => x + 1 -- fun x => Nat.succ x
-
-/- ## Typeclasses -/
-
-#synth ∀ {n : ℕ},  Decidable (Even n)
--- #synth ∀ {n : ℝ}, Decidable (Even n) -- fails
-#instances Decidable
-
-/- ## library_search -/
-
--- example {m n : ℕ} : m + n = n + m := by
---   exact?
-
--- example {m n : ℕ} : n.succ = m.succ → n = m := by
---   exact?
-
--- example {m n : ℕ} : n.succ.succ = m.succ.succ → n = m := by
---   intros
---   fail_if_success exact?
---   apply?
-
-/- ## What does my automation do? -/
-
-example {m n : ℕ} : n.succ.succ = m.succ.succ → n = m := by
-  simp?
-
-example {m n : ℕ} : n.succ.succ = m.succ.succ → n = m := by
-  set_option trace.Meta.Tactic.simp.rewrite true in
-  simp?
-
-example {P Q R : Prop} : P ∨ Q → (P → R) → (Q → R) → R := by
-  aesop?
-
-example {P Q R : Prop} : P ∨ Q → (P → R) → (Q → Q) → R := by
-  set_option trace.aesop true in
-  aesop
-  sorry
-
-/- # Differences between Coq and Lean -/
 
 /- # Metaprogramming -/
 
