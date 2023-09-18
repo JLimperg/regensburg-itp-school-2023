@@ -123,3 +123,21 @@ https://leanprover.github.io/theorem_proving_in_lean4/
 
 The official Lean 4 textbook. Discusses the Lean system in a systematic fashion
 without focusing on any particular application.
+
+## Resources
+
+- [Lean Zulip](https://leanprover.zulipchat.com): very active chat server. Basic
+  questions are very welcome; post them in a new topic in the `#new members`
+  stream.
+- [leanprover-community](https://leanprover-community.github.io): lots of
+  documentation, though some of it is outdated.
+- [mathlib
+  overview](https://leanprover-community.github.io/mathlib-overview.html):
+  high-level description of the mathematics that's currently in mathlib.
+- [mathlib 4 docs](https://leanprover-community.github.io/mathlib4_docs/): API
+  documentation for mathlib as well as Lean 4 and the standard library.
+- [Lean 4 manual](https://leanprover.github.io/lean4/doc/): official Lean 4
+  reference manual.
+- [Metaprogramming
+  book](https://github.com/leanprover-community/lean4-metaprogramming-book):
+  work-in-progress textbook about Lean 4 metaprogramming.
