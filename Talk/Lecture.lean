@@ -78,10 +78,6 @@ example : (A ∧ B) ∧ C → A ∧ (B ∧ C) := by
   intro ⟨⟨a, b⟩, c⟩
   (repeat' constructor) <;> assumption
 
-example : A ∧ B → B ∧ A := by
-  fail_if_success (simp; done)
-  intros; simp_all
-
 /- ### Or -/
 
 example : A ∨ B → B ∨ A := by
@@ -121,10 +117,6 @@ example : A ∨ B → B ∨ A := by
   · right; assumption
   · left; assumption
 
-example : A ∨ B → B ∨ A := by
-  fail_if_success simp
-  aesop
-
 /- ## Exists, Sigma -/
 
 example {P Q : α → Prop} : (∃ x, P x) → (∀ x, P x → Q x) → ∃ x, Q x := by
@@ -158,10 +150,6 @@ example {m n o : ℕ} : m = n → n = o → m = o := by
   intros mn no
   rw [mn, no]
 
-example {m n o : ℕ} : m = n → n = o → m = o := by
-  intros mn no
-  simp_all
-
 example {f g : α → β} (h : ∀ a, f a = g a) : f = g := by
   funext a
   apply h
@@ -182,6 +170,9 @@ example {f g : α → β → γ} (fg : f = g) (ab : a = b) (bc : b = c) (xy : x 
 
 /- ### Conv Mode -/
 
+-- Example from TPIL, more at
+-- https://leanprover.github.io/theorem_proving_in_lean4/conv.html
+
 example (a b c : ℕ) : a * (b * c) = a * (c * b) := by
   conv =>
     lhs
@@ -195,8 +186,69 @@ example (a b c : ℕ) : a * (b * c) = a * (c * b) := by
 example (a b c : ℕ) : a * (b * c) = a * (c * b) := by
   conv in b * _ => rw [Nat.mul_comm]
 
--- Example from TPIL. More examples:
--- https://leanprover.github.io/theorem_proving_in_lean4/conv.html
+/- ## The Simplifier -/
+
+-- Some examples from TPIL, more at
+-- https://leanprover.github.io/theorem_proving_in_lean4/tactics.html#using-the-simplifier
+
+example (x y z : ℕ) : (x + 0) * (0 + y * 1 + z * 0) = x * y := by
+  simp
+
+example (x y : ℕ) (P : Nat → Prop) (h : P (x + 0 + y * 0)) : P x := by
+  simp at h
+  assumption
+
+example (x y : ℕ) (P : Nat → Prop) (h : P (x + 0 + y * 0)) : P x := by
+  simp at *
+  assumption
+
+example (x y : ℕ) (h : x = y) : x + 0 + y = y + y := by
+  simp [*]
+
+example (x y : ℕ) (P : Nat → Prop) (h : P (x + 0 + y * 0)) : P x := by
+  simp_all
+
+example (x y z : ℕ) : (x + 0) * (0 + y * 1 + z * 0) = x * y := by
+  simp?
+
+def mkSymm (xs : List α) : List α :=
+  xs ++ xs.reverse
+
+@[simp]
+theorem reverse_mkSymm (xs : List α) : (mkSymm xs).reverse = mkSymm xs := by
+  simp [mkSymm]
+
+example (xs ys : List α) :
+    (xs ++ mkSymm ys).reverse = mkSymm ys ++ xs.reverse := by
+  simp
+
+/- ### Associativity and Commutativity -/
+
+example (x y : ℕ) : (x + y) + z = x + (y + z) := by
+  simp [Nat.add_assoc]
+
+example (x y : ℕ) : x + y = y + x := by
+  simp [Nat.add_comm]
+
+example (x y z : ℕ) : (x + y + z) + x = x + y + z + x := by
+  simp [Nat.add_assoc, Nat.add_comm]
+
+/- ### Propositional Simplification -/
+
+example (a : A) (b : B) : A ∧ B := by
+  simp [*]
+
+example : A ∧ B → B ∧ A := by
+  fail_if_success (simp; done)
+  intros; simp_all
+
+example {m n o : ℕ} : m = n → n = o → m = o := by
+  intros mn no
+  simp_all
+
+example : A ∨ B → B ∨ A := by
+  fail_if_success simp
+  aesop
 
 /- ## Structured Proof -/
 
