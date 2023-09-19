@@ -47,9 +47,9 @@ also work for any other Lean package):
   Some warnings are expected.
 - Start VSCode and open the *folder* `regensburg-itp-school-2023` (*not* a
   specific file in that folder).
-- Select the file `Talk/Lecture.lean`. This is the code I'll be discussing
-  during the lecture. Lean should automatically start and blue or green squiggly
-  lines should appear at various places in the file.
+- Select the file `Talk/01Logic.lean`. This is some of the code I'll be
+  discussing during the lecture. Lean should automatically start and blue or
+  green squiggly lines should appear at various places in the file.
 
 See also [these
 instructions](https://leanprover-community.github.io/install/project.html#working-on-an-existing-project).
