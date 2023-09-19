@@ -22,22 +22,22 @@ example : False → α :=
 /- ### Implication, Forall -/
 
 example : (A → B) → A → B := by
-  intros hab ha
+  intro hab ha
   apply hab
   exact ha
 
 example : ∀ (hab : ∀ (a : A), B) (ha : A), B := by
-  intros hab ha
+  intro hab ha
   apply hab
   exact ha
 
 example : (A → B → C) → A → B → C := by
-  intros habc a b
+  intro habc a b
   refine habc ?_ b
   exact a
 
 example : (A → B → C) → A → B → C := by
-  intros habc a b
+  intro habc a b
   refine' habc _ b
   exact a
 
