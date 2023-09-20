@@ -88,4 +88,23 @@ instance : OfNat Nat n where
 
 example : (1 : Nat) * (1 + 1) = 2 := rfl
 
+/- ## Implicit Arguments -/
+
+def reverse {α} : List α → List α
+  | .nil => .nil
+  | .cons x xs => reverse xs ++ [x]
+
+example (xs : List α) : List α :=
+  reverse xs
+
+example (xs : List α) : List α :=
+  @reverse α xs
+
+example (xs : List α) : List α :=
+  reverse (α := α) xs
+
+def reverse₂ : List α → List α
+  | .nil => .nil
+  | .cons x xs => reverse xs ++ [x]
+
 end Examples

@@ -45,9 +45,6 @@ inductive Piece.LegalMove (start stop : Pos n) : Piece → Prop
 inductive Bad.LegalMove (start stop : Pos n) : Peice → Prop
 -- ...
 
-set_option autoImplicit false
-set_option autoImplicit true
-
 section LegalMove
 
 variable {p : Piece}
