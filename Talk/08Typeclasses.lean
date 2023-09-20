@@ -1,6 +1,7 @@
 /- # Type Classes and the Algebraic Hierarchy -/
 
 import Mathlib.Algebra.Module.Basic
+import Mathlib.Tactic
 
 namespace TC
 
@@ -50,5 +51,9 @@ example [Monoid α] (a b c : α) : a * (1 * b * c) = a * b * c := by
   rw [MulOneClass.one_mul, Semigroup.mul_assoc]
 
 #check Module
+
+#synth AddMonoid ℕ
+-- #synth Monoid ℕ
+#instances AddMonoid
 
 end TC
