@@ -30,7 +30,7 @@ def add : Nat → Nat → Nat
 
 def add₂ (m n : Nat) : Nat :=
   match m, n with
-  | m, Nat.zero => m
+  | m, Nat.zero   => m
   | m, Nat.succ n => Nat.succ (add₂ m n)
 
 /- ## Namespaces -/
@@ -45,7 +45,6 @@ def one : Nat :=
   succ zero
 
 #check one
-#print one
 
 def add : Nat → Nat → Nat
   | m, zero => m
@@ -65,9 +64,6 @@ def add₃ : Nat → Nat → Nat
 def mul : Nat → Nat → Nat
   | _, .zero => .zero
   | m, .succ n => m.add (mul m n)
-
-def one₃ : Nat :=
-  .succ .zero
 
 def two : Nat :=
   .succ <| .succ .zero
@@ -94,13 +90,13 @@ def reverse {α} : List α → List α
   | .nil => .nil
   | .cons x xs => reverse xs ++ [x]
 
-example (xs : List α) : List α :=
+example {α} (xs : List α) : List α :=
   reverse xs
 
-example (xs : List α) : List α :=
+example {α} (xs : List α) : List α :=
   @reverse α xs
 
-example (xs : List α) : List α :=
+example {α} (xs : List α) : List α :=
   reverse (α := α) xs
 
 def reverse₂ : List α → List α
