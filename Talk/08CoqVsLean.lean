@@ -1,9 +1,5 @@
 /- # Foundational Differences between Coq and Lean -/
 
-/- ## Non-Cumulative Universes -/
-
-example (α : Type u) : Type (u + 1) := ULift.{u+1,u} α
-
 /- ## Definitionally Proof-Irrelevant Prop -/
 
 example (P : Prop) (p q : P) : p = q :=
@@ -40,3 +36,11 @@ example {a b : α} : ∀ (p q : REq a b), REq p q
 example (R : α → α → Prop) (f : α → β) (resp : ∀ a b, R a b → f a = f b)
     (a : α) : Quot.lift f resp (Quot.mk R a) = f a :=
   rfl
+
+/- ## Non-Cumulative Universes -/
+
+#check (Type 0 : _)
+#check (Type 1 : _)
+#check (Type 2 : _)
+
+example (α : Type u) : Type (u + 1) := ULift.{u+1,u} α
