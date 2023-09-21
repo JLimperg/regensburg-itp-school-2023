@@ -49,6 +49,17 @@ example (x y z : ℚ) (h1 : 2*x < 3*y) (h2 : -4*x + 2*z < 0)
     (h3 : 12*y - 4* z < 0) : False := by
   crush
 
+open Lean.Parser.Tactic Lean.Syntax in
+macro "simp!!" "[" ls:(simpLemma <|> simpStar <|> simpErase),* "]" : tactic =>
+  let ls : TSepArray [``simpStar, ``simpErase, ``simpLemma] "," :=
+    ⟨ls.elemsAndSeps⟩
+  `(tactic| (simp (discharger := crush) [$ls,*]))
+
+example (m n : ℕ) (h₁ : m ≤ n) (h₂ : m ≥ n)
+    (xy : m = n → x = y) (yz : y = z) : x = z := by
+  fail_if_success simp [*]
+  simp!! [*]
+
 /- ## Writing Custom Tactics -/
 
 section Tactics
@@ -109,3 +120,36 @@ example (h₁ : α ∨ β) (h₂ : γ ∨ δ) : α ∨ β ∨ γ ∨ δ := by
   all_goals aesop
 
 end Tactics
+
+/- ## Embedded Domain-Specific Languages -/
+
+inductive Tm where
+  | var : ℕ → Tm
+  | lam : Tm → Tm
+  | app : Tm → Tm → Tm
+
+declare_syntax_cat tm (behavior := both)
+
+syntax num : tm
+syntax "λ " tm : tm
+syntax tm ppSpace tm : tm
+syntax "(" tm ")" : tm
+
+open Lean Lean.Meta Lean.Elab Lean.Elab.Term Qq in
+partial def elabTm : TSyntax `tm → TermElabM Q(Tm)
+  | `(tm| $n:num) => do
+    let n : Q(ℕ) ← elabTerm n (some <| .const ``Nat [])
+    return q(Tm.var $n)
+  | `(tm| λ $t:tm) => do
+    return q(Tm.lam $(← elabTm t))
+  | `(tm| $t:tm $u:tm) => do
+    return q(Tm.app $(← elabTm t) $(← elabTm u))
+  | `(tm| ($t:tm)) =>
+    elabTm t
+  | _ => throwUnsupportedSyntax
+
+elab "tm%⟨" t:tm "⟩" : term =>
+  elabTm t
+
+example : Tm := tm%⟨ (λ 0 0) (λ 0 0) ⟩
+-- (λ x. x x) (λ x. x x)
