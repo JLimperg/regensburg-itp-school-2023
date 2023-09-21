@@ -29,6 +29,7 @@ example (f : ℝ → ℝ) (u : ℕ → ℝ) (x₀ : ℝ) (hu : SeqLimit u x₀)
     hf ε hε
   have ⟨N, Hu⟩ : ∃ N, ∀ n ≥ N, |u n - x₀| ≤ δ :=
     hu δ δ_pos
+  show ∃ N, ∀ n ≥ N, |(f ∘ u) n - f x₀| ≤ ε
   use N
   show ∀ n ≥ N, |(f ∘ u) n - f x₀| ≤ ε
   aesop
