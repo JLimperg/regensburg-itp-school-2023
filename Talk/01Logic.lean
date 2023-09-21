@@ -9,7 +9,7 @@ example : (A → B) → A → B := by
   apply hab
   exact ha
 
-example : ∀ (hab : ∀ (a : A), B) (ha : A), B := by
+example : (hab : ∀ (a : A), B) → A → B := by
   intro hab ha
   apply hab
   exact ha
@@ -26,14 +26,6 @@ example : False → α := by
   cases contra
 
 /- ## And -/
-
-example : A ∧ B → B ∧ A := by
-  intro h
-  cases h with
-  | intro a b =>
-    constructor
-    · assumption
-    · assumption
 
 example : A ∧ B → B ∧ A := by
   intro h
@@ -72,13 +64,9 @@ example {P Q : α → Prop} : (∃ x, P x) → (∀ x, P x → Q x) → ∃ x, Q
   use x
   aesop
 
-example {P Q : α → Prop} : (∃ x, P x) → (∀ x, P x → Q x) → ∃ x, Q x := by
-  intro ⟨x, hP⟩ hPQ
-  exists x
-  aesop
-
 example {P Q : α → Type} : (Σ x, P x) → (∀ x, P x → Q x) → Σ x, Q x := by
-  intro ⟨x, hP⟩ hPQ
+  intro sig hPQ
+  obtain ⟨x, hx⟩ := sig
   use x
   aesop
 
