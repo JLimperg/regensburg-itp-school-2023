@@ -10,6 +10,16 @@ inductive Nat where
   | zero : Nat
   | succ : Nat → Nat
 
+/- ## Structures -/
+
+structure Point where
+  x : Nat
+  y : Nat
+
+#check Point.mk
+#check Point.x
+#check Point.y
+
 /- ## Definitions -/
 
 def one : Nat :=
@@ -66,7 +76,7 @@ def mul : Nat → Nat → Nat
   | m, .succ n => m.add (mul m n)
 
 def two : Nat :=
-  .succ <| .succ .zero
+  .succ (.succ .zero)
 
 /- ## Notations -/
 
