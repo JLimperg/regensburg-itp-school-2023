@@ -1,25 +1,47 @@
 /- # Type Classes and the Algebraic Hierarchy -/
 
-import Mathlib.Algebra.Module.Basic
-import Mathlib.Tactic
+import Mathlib
 
 namespace TC
 
 class Mul (α : Type u) where
   mul : α → α → α
 
-local infixl : 70 (priority := high) "*" => Mul.mul
-
-example [Mul α] (x y : α) : α :=
-  x * y
-
 instance : Mul ℕ where
   mul := Nat.mul
 
 example (x y : ℕ) : ℕ :=
-  x + y
+  Mul.mul x y
 
-class One (α : Type u) where
+instance : Mul ℤ where
+  mul := Int.mul
+
+example (x y : ℤ) : ℤ :=
+  Mul.mul x y
+
+local infixl : 70 (priority := high) "*" => Mul.mul
+
+example (x y : ℕ) : ℕ :=
+  x * y
+
+example (x y : ℤ) : ℤ :=
+  x * y
+
+def square [Mul α] (x : α) : α :=
+  x * x
+
+example (x : ℕ) : ℕ :=
+  square x
+
+#check Mul.mul
+
+class Semigroup (α : Type _) extends Mul α where
+  mul_assoc : ∀ a b c : α, (a * b) * c = a * (b * c)
+
+instance : Semigroup ℕ where
+  mul_assoc := Nat.mul_assoc
+
+class One (α : Type _) where
   one : α
 
 local instance [One α] : OfNat α 1 where
@@ -28,32 +50,17 @@ local instance [One α] : OfNat α 1 where
 example [One α] [Mul α] : α :=
   1 * 1
 
-def npowRec [One M] [Mul M] : ℕ → M → M
-  | 0, _ => 1
-  | n + 1, a => a * npowRec n a
-
-class MulOneClass (M : Type u) extends One M, Mul M where
-  one_mul : ∀ a : M, 1 * a = a
-  mul_one : ∀ a : M, a * 1 = a
-
-example [MulOneClass α] (a : α) : 1 * 1 * a = a := by
-  rw [MulOneClass.one_mul, MulOneClass.one_mul]
-
-class Semigroup (G : Type u) extends Mul G where
-  mul_assoc : ∀ a b c : G, a * b * c = a * (b * c)
-
-class Monoid (M : Type u) extends Semigroup M, MulOneClass M where
-  npow : ℕ → M → M := npowRec
-  npow_zero : ∀ x, npow 0 x = 1 := by intros; rfl
-  npow_succ : ∀ (n : ℕ) (x), npow (n + 1) x = x * npow n x := by intros; rfl
+class Monoid (α : Type _) extends Semigroup α, One α where
+  one_mul : ∀ a : α, 1 * a = a
+  mul_one : ∀ a : α, a * 1 = a
 
 example [Monoid α] (a b c : α) : a * (1 * b * c) = a * b * c := by
-  rw [MulOneClass.one_mul, Semigroup.mul_assoc]
+  rw [Monoid.one_mul, Semigroup.mul_assoc]
 
 #check Module
 
 #synth AddMonoid ℕ
--- #synth Monoid ℕ
-#instances AddMonoid
+#synth Ring ℕ
+#instances Ring
 
 end TC
