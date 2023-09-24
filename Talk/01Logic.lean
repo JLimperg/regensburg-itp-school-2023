@@ -1,6 +1,7 @@
 /- # Tactics for Logical Connectives -/
 
 import Mathlib.Tactic
+import Mathlib.Tactic.NormNum.Prime
 
 /- ## Implication, Forall -/
 
@@ -72,3 +73,29 @@ example {P Q : α → Type} : (Σ x, P x) → (∀ x, P x → Q x) → Σ x, Q x
 
 example {P Q : α → Type} : (Σ x, P x) → (∀ x, P x → Q x) → Σ x, Q x := by
   aesop
+
+/- ## Other Basic Tactics -/
+
+example (n : ℕ) (h : n < 0) : Prime 4 := by
+  have : False := by
+    apply Nat.not_lt_zero
+    exact h
+  cases this
+
+example (n m : ℕ) (h₁ : n < 0) (h₂ : 0 < m) (h₃ : m < 3) : False := by
+  clear m h₂ h₃
+  have contra := not_lt_zero' h₁
+  cases contra
+
+example (a : α) : α := by
+  revert a
+  exact id
+
+example (a : α) : α := by
+  revert a
+  exact id
+
+example : Nat.Prime 3 := by
+  unfold Nat.Prime
+  show Nat.Prime 3
+  norm_num
