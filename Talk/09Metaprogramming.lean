@@ -138,7 +138,7 @@ syntax "(" tm ")" : tm
 open Lean Lean.Meta Lean.Elab Lean.Elab.Term Qq in
 partial def elabTm : TSyntax `tm → TermElabM Q(Tm)
   | `(tm| $n:num) => do
-    let n : Q(ℕ) ← elabTerm n (some <| .const ``Nat [])
+    let n : Q(ℕ) ← elabTerm n q(ℕ)
     return q(Tm.var $n)
   | `(tm| λ $t:tm) => do
     return q(Tm.lam $(← elabTm t))
