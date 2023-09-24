@@ -29,19 +29,3 @@ attribute [local aesop 1% cases] List
 
 example {l : List α} : l ⊆ [] → l = [] := by
   aesop
-
-/-
-Aesop algorithm:
-
-1. Pick the 'most promising' open goal.
-2. Normalise the goal:
-   Run normalisation rules (in a customisable order) until none makes progress
-   any more.
-3. Run safe rules:
-   Run safe rules (in a customisable order). Once a safe rule makes progress,
-   consider the original goal as 'closed' and recurse into the subgoals.
-4. Run unsafe rules:
-   Once no safe rule makes progress any more: run unsafe rules (in a
-   customisable order).
-5. If no rule made progress, consider the goal as unprovable.
--/
