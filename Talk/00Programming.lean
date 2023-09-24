@@ -10,6 +10,8 @@ inductive Nat where
   | zero : Nat
   | succ : Nat → Nat
 
+#check Nat.zero
+
 /- ## Structures -/
 
 structure Point where
@@ -106,8 +108,8 @@ example {α} (xs : List α) : List α :=
 example {α} (xs : List α) : List α :=
   @reverse α xs
 
-example {α} (xs : List α) : List α :=
-  reverse (α := α) xs
+example {β} (xs : List β) : List β :=
+  reverse (α := β) xs
 
 def reverse₂ : List α → List α
   | .nil => .nil
