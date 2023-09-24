@@ -2,7 +2,7 @@
 
 import Aesop
 
-example : (A → B ∨ C) → B → D → C → D → A → C ∨ D := by
+example : (A → B ∨ A → C) → (B ∨ C → D) → (B ∨ C → E) → A → D ∧ E := by
   aesop
 
 theorem ne_nil_of_mem {a : α} {l : List α} (h : a ∈ l) : l ≠ [] := by
