@@ -17,14 +17,10 @@ example {f g : α → β} (h : ∀ a, f a = g a) : f = g := by
   funext a
   apply h
 
-example {f : α → β → γ} : f a b = f a' b' := by
-  congr
-  all_goals sorry
-
 /- ## Calc Mode -/
 
-example {f g : α → β → γ} (fg : f = g) (ab : a = b) (bc : b = c) (xy : x = y) :
-    f a x = g c y := by
+example {f g : α → β → γ} (fg : f = g) (ab : a = b) (bc : b = c)
+    (xy : x = y) : f a x = g c y := by
   calc
     f a x = f b x := by rw [ab]
     _     = f c x := by rw [bc]
@@ -56,11 +52,13 @@ example (a b c : ℕ) : a * (b * c) = a * (c * b) := by
 example (x y z : ℕ) : (x + 0) * (0 + y * 1 + z * 0) = x * y := by
   simp
 
-example (x y : ℕ) (P : Nat → Prop) (h : P (x + 0 + y * 0)) : P x := by
+example (x y : ℕ) (P : Nat → Prop) (h : P (x + 0 + y * 0)) :
+    P x := by
   simp at h
   assumption
 
-example (x y : ℕ) (P : Nat → Prop) (h : P (x + 0 + y * 0)) : P (x + 0) := by
+example (x y : ℕ) (P : Nat → Prop) (h : P (x + 0 + y * 0)) :
+    P (x + 0) := by
   simp at *
   assumption
 
@@ -80,23 +78,13 @@ def mkSymm (xs : List α) : List α :=
   xs ++ xs.reverse
 
 @[simp]
-theorem reverse_mkSymm (xs : List α) : (mkSymm xs).reverse = mkSymm xs := by
+theorem reverse_mkSymm (xs : List α) :
+    (mkSymm xs).reverse = mkSymm xs := by
   simp [mkSymm]
 
 example (xs ys : List α) :
     (xs ++ mkSymm ys).reverse = mkSymm ys ++ xs.reverse := by
-  simp [reverse_mkSymm]
-
-/- ### Associativity and Commutativity -/
-
-example (x y : ℕ) : (x + y) + z = x + (y + z) := by
-  simp only [add_assoc]
-
-example (x y : ℕ) : x + y = y + x := by
-  simp only [add_comm]
-
-example (x y z : ℕ) : (x + y + z) + x = x + y + z + x := by
-  simp only [add_assoc, add_comm]
+  simp
 
 /- ### Propositional Simplification -/
 
