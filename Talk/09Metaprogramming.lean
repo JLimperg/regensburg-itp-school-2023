@@ -88,9 +88,67 @@ example (h : β) : α := by
   fail_if_success assm
   sorry
 
+/- ### Main Data Structures -/
+
+inductive Demo.Expr where
+  | bvar (deBruijnIndex : Nat)
+  | fvar (fvarId : FVarId)
+  | mvar (mvarId : MVarId)
+  | sort (u : Level)
+  | const (declName : Name) (us : List Level)
+  | app (fn : Expr) (arg : Expr)
+  | lam (binderName : Name) (binderType : Expr) (body : Expr) (binderInfo : BinderInfo)
+  | forallE (binderName : Name) (binderType : Expr) (body : Expr) (binderInfo : BinderInfo)
+  | letE (declName : Name) (type : Expr) (value : Expr) (body : Expr) (nonDep : Bool)
+  | lit : Literal → Expr
+  | mdata (data : MData) (expr : Expr)
+  | proj (typeName : Name) (idx : Nat) (struct : Expr)
+
+example : Nat → Nat := by
+  refine fun (n : Nat) => Nat.succ ?_
+  exact n
+
+#check Environment
+
+elab "print_decl_info " id:ident : tactic => do
+  let (some decl) := (← getEnv).find? id.getId
+    | throwError "not found!"
+  logInfo m!"Name: {decl.name}"
+  logInfo m!"Type: {decl.type}"
+
+example : True := by
+  print_decl_info Nat
+  print_decl_info Nat.zero
+  trivial
+
+#check MetavarContext
+
+elab "print_main_goal_info" : tactic =>
+  withMainContext do
+    let goal ← getMainGoal
+    let mdecl ← goal.getDecl
+    let target := mdecl.type
+    let lctx := mdecl.lctx
+    logInfo m!"MVarId: {goal.name}"
+    logInfo m!"Target: {target}"
+    logInfo m!"Number of hyps: {lctx.size}"
+    for ldecl in lctx do
+      logInfo m!"FVarId: {ldecl.fvarId.name}"
+      logInfo m!"Name: {ldecl.userName}"
+      logInfo m!"Type: {ldecl.type}"
+
+example (n : Nat) : ¬ n < 0 := by
+  print_main_goal_info
+  simp
+
+#check Lean.Elab.Tactic.State
+
 /- ### Splitting Disjunctions -/
 
-#check Expr
+variable (A B : Prop)
+
+set_option pp.all true in
+#check A ∨ B
 
 def isOr : Expr → Bool
   | .app (.app (.const ``Or _) _) _ => true
