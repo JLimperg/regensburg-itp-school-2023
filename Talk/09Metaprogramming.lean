@@ -50,7 +50,7 @@ example (x y z : ℚ) (h1 : 2*x < 3*y) (h2 : -4*x + 2*z < 0)
   crush
 
 open Lean.Parser.Tactic Lean.Syntax in
-macro "simp!!" "[" ls:(simpLemma <|> simpStar <|> simpErase),* "]" : tactic =>
+macro "simp!!" "[" ls:(simpStar <|> simpErase <|> simpLemma),* "]" : tactic =>
   let ls : TSepArray [``simpStar, ``simpErase, ``simpLemma] "," :=
     ⟨ls.elemsAndSeps⟩
   `(tactic| (simp (discharger := crush) [$ls,*]))
