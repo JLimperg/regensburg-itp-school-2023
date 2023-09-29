@@ -27,17 +27,9 @@ macro_rules
 macro_rules
   | `(tactic| crush) => `(tactic| linarith; done)
 macro_rules
-  | `(tactic| crush) => `(tactic| continuity)
-macro_rules
-  | `(tactic| crush) => `(tactic| measurability)
-macro_rules
   | `(tactic| crush) => `(tactic| decide)
 macro_rules
   | `(tactic| crush) => `(tactic| norm_num; done)
-macro_rules
-  | `(tactic| crush) => `(tactic| assumption)
-macro_rules
-  | `(tactic| crush) => `(tactic| contradiction)
 
 example : α ∧ β ↔ β ∧ α := by
   crush
@@ -90,6 +82,8 @@ example (h : β) : α := by
 
 /- ### Main Data Structures -/
 
+/- #### Expressions -/
+
 inductive Demo.Expr where
   | bvar (deBruijnIndex : Nat)
   | fvar (fvarId : FVarId)
@@ -97,21 +91,30 @@ inductive Demo.Expr where
   | sort (u : Level)
   | const (declName : Name) (us : List Level)
   | app (fn : Expr) (arg : Expr)
-  | lam (binderName : Name) (binderType : Expr) (body : Expr) (binderInfo : BinderInfo)
-  | forallE (binderName : Name) (binderType : Expr) (body : Expr) (binderInfo : BinderInfo)
-  | letE (declName : Name) (type : Expr) (value : Expr) (body : Expr) (nonDep : Bool)
+  | lam     (binderName : Name) (binderType : Expr)
+            (body : Expr) (binderInfo : BinderInfo)
+  | forallE (binderName : Name) (binderType : Expr)
+            (body : Expr) (binderInfo : BinderInfo)
+  | letE (declName : Name) (type : Expr) (value : Expr)
+         (body : Expr) (nonDep : Bool)
   | lit : Literal → Expr
   | mdata (data : MData) (expr : Expr)
   | proj (typeName : Name) (idx : Nat) (struct : Expr)
 
-example : Nat → Nat := by
-  refine fun (n : Nat) => Nat.succ ?_
-  exact n
+def idNatExpr : Expr :=
+  .lam `x (.const ``Nat []) (.bvar 0) .default
+
+def idExpr : Expr :=
+  .lam `α (.sort .zero)
+    (.lam `x (.bvar 0) (.bvar 1) .default)
+    .implicit
+
+/- #### The Environment -/
 
 #check Environment
 
 elab "print_decl_info " id:ident : tactic => do
-  let (some decl) := (← getEnv).find? id.getId
+  let some decl := (← getEnv).find? id.getId
     | throwError "not found!"
   logInfo m!"Name: {decl.name}"
   logInfo m!"Type: {decl.type}"
@@ -120,6 +123,12 @@ example : True := by
   print_decl_info Nat
   print_decl_info Nat.zero
   trivial
+
+/- #### The Metavariable Context -/
+
+example : Nat → Nat := by
+  refine fun (n : Nat) => Nat.succ ?_
+  exact n
 
 #check MetavarContext
 
@@ -141,7 +150,9 @@ example (n : Nat) : ¬ n < 0 := by
   print_main_goal_info
   simp
 
-#check Lean.Elab.Tactic.State
+/- #### The Goal List -/
+
+#check Tactic.State
 
 /- ### Splitting Disjunctions -/
 
@@ -190,7 +201,7 @@ declare_syntax_cat tm (behavior := both)
 
 syntax num : tm
 syntax "λ " tm : tm
-syntax tm ppSpace tm : tm
+syntax tm tm : tm
 syntax "(" tm ")" : tm
 
 open Lean Lean.Meta Lean.Elab Lean.Elab.Term Qq in
@@ -209,5 +220,7 @@ partial def elabTm : TSyntax `tm → TermElabM Q(Tm)
 elab "tm%⟨" t:tm "⟩" : term =>
   elabTm t
 
-example : Tm := tm%⟨ (λ 0 0) (λ 0 0) ⟩
+def loop : Tm := tm%⟨ (λ 0 0) (λ 0 0) ⟩
 -- (λ x. x x) (λ x. x x)
+
+#print loop
